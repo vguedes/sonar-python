@@ -31,6 +31,8 @@ import org.sonar.plugins.python.api.symbols.Usage;
 import org.sonar.plugins.python.api.tree.Name;
 import org.sonar.plugins.python.api.tree.Tree;
 import org.sonar.plugins.python.api.types.InferredType;
+import org.sonar.python.symbols.SerializableSymbol;
+import org.sonar.python.symbols.SerializableSymbolImpl;
 import org.sonar.python.tree.NameImpl;
 import org.sonar.python.types.InferredTypes;
 
@@ -131,5 +133,9 @@ public class SymbolImpl implements Symbol {
 
   Map<String, Symbol> getChildrenSymbolByName() {
     return Collections.unmodifiableMap(childrenSymbolByName);
+  }
+
+  SerializableSymbol toSerializableSymbol() {
+    return new SerializableSymbolImpl(name, fullyQualifiedName);
   }
 }

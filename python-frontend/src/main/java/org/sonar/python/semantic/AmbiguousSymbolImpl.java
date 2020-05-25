@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.sonar.plugins.python.api.symbols.AmbiguousSymbol;
 import org.sonar.plugins.python.api.symbols.Symbol;
+import org.sonar.python.symbols.SerializableAmbiguousSymbolImpl;
+import org.sonar.python.symbols.SerializableSymbol;
 
 public class AmbiguousSymbolImpl extends SymbolImpl implements AmbiguousSymbol {
 
@@ -69,5 +71,13 @@ public class AmbiguousSymbolImpl extends SymbolImpl implements AmbiguousSymbol {
   public void removeUsages() {
     super.removeUsages();
     symbols.forEach(symbol -> ((SymbolImpl) symbol).removeUsages());
+  }
+
+  @Override
+  SerializableSymbol toSerializableSymbol() {
+    Set<SerializableSymbol> serializableSymbols = alternatives().stream()
+      .map(symbol -> ((SymbolImpl) symbol).toSerializableSymbol())
+      .collect(Collectors.toSet());
+    return new SerializableAmbiguousSymbolImpl(name(), fullyQualifiedName(), serializableSymbols);
   }
 }

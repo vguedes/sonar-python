@@ -35,6 +35,8 @@ import javax.annotation.Nullable;
 import org.sonar.plugins.python.api.symbols.AmbiguousSymbol;
 import org.sonar.plugins.python.api.symbols.ClassSymbol;
 import org.sonar.plugins.python.api.symbols.Symbol;
+import org.sonar.python.symbols.SerializableClassSymbolImpl;
+import org.sonar.python.symbols.SerializableSymbol;
 
 public class ClassSymbolImpl extends SymbolImpl implements ClassSymbol {
 
@@ -199,5 +201,18 @@ public class ClassSymbolImpl extends SymbolImpl implements ClassSymbol {
 
   boolean hasSuperClassWithoutSymbol() {
     return hasSuperClassWithoutSymbol;
+  }
+
+  @Override
+  SerializableSymbol toSerializableSymbol() {
+    List<String> superClassFqns = superClasses.stream()
+      .map(Symbol::fullyQualifiedName)
+      .filter(Objects::nonNull)
+      .collect(Collectors.toList());
+    Set<String> memberFqns = members.stream()
+      .map(Symbol::fullyQualifiedName)
+      .filter(Objects::nonNull)
+      .collect(Collectors.toSet());
+    return new SerializableClassSymbolImpl(name(), fullyQualifiedName(), superClassFqns, memberFqns);
   }
 }

@@ -39,6 +39,10 @@ import org.sonar.plugins.python.api.tree.Tree;
 import org.sonar.plugins.python.api.tree.TypeAnnotation;
 import org.sonar.plugins.python.api.types.InferredType;
 import org.sonar.python.TokenLocation;
+import org.sonar.python.symbols.SerializableFunctionSymbolImpl;
+import org.sonar.python.symbols.SerializableParameter;
+import org.sonar.python.symbols.SerializableParameterImpl;
+import org.sonar.python.symbols.SerializableSymbol;
 import org.sonar.python.types.InferredTypes;
 
 import static org.sonar.python.semantic.SymbolUtils.pathOf;
@@ -227,7 +231,15 @@ public class FunctionSymbolImpl extends SymbolImpl implements FunctionSymbol {
     this.owner = owner;
   }
 
-  private static class ParameterImpl implements Parameter {
+  @Override
+  SerializableSymbol toSerializableSymbol() {
+    List<SerializableParameter> serializableParameters = parameters.stream()
+      .map(SerializableParameterImpl::new)
+      .collect(Collectors.toList());
+    return new SerializableFunctionSymbolImpl(name(), fullyQualifiedName(), serializableParameters, isStub, isInstanceMethod, decorators, functionDefinitionLocation);
+  }
+
+  public static class ParameterImpl implements Parameter {
 
     private final String name;
     private final InferredType declaredType;
@@ -236,7 +248,7 @@ public class FunctionSymbolImpl extends SymbolImpl implements FunctionSymbol {
     private final boolean isPositionalOnly;
     private final LocationInFile location;
 
-    ParameterImpl(@Nullable String name, InferredType declaredType, boolean hasDefaultValue, ParameterState parameterState, @Nullable LocationInFile location) {
+    public ParameterImpl(@Nullable String name, InferredType declaredType, boolean hasDefaultValue, ParameterState parameterState, @Nullable LocationInFile location) {
       this.name = name;
       this.declaredType = declaredType;
       this.hasDefaultValue = hasDefaultValue;
