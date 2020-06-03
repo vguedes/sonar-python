@@ -177,9 +177,9 @@ public class FunctionSymbolImpl extends SymbolImpl implements FunctionSymbol {
     return decorators;
   }
 
-  private static class ParameterState {
-    boolean keywordOnly = false;
-    boolean positionalOnly = false;
+  public static class ParameterState {
+    public boolean keywordOnly = false;
+    public boolean positionalOnly = false;
   }
 
   @Override
@@ -228,7 +228,15 @@ public class FunctionSymbolImpl extends SymbolImpl implements FunctionSymbol {
     this.owner = owner;
   }
 
-  private static class ParameterImpl implements Parameter {
+  @Override
+  SerializableSymbol toSerializableSymbol() {
+    List<SerializableParameter> serializableParameters = parameters.stream()
+      .map(SerializableParameter::new)
+      .collect(Collectors.toList());
+    return new SerializableFunctionSymbol(name(), fullyQualifiedName(), serializableParameters, isStub, isInstanceMethod, decorators, functionDefinitionLocation);
+  }
+
+  public static class ParameterImpl implements Parameter {
 
     private final String name;
     private final InferredType declaredType;
@@ -238,7 +246,7 @@ public class FunctionSymbolImpl extends SymbolImpl implements FunctionSymbol {
     private final boolean isPositionalOnly;
     private final LocationInFile location;
 
-    ParameterImpl(@Nullable String name, InferredType declaredType, boolean hasDefaultValue,
+    public ParameterImpl(@Nullable String name, InferredType declaredType, boolean hasDefaultValue,
                   boolean isVariadic, ParameterState parameterState, @Nullable LocationInFile location) {
       this.name = name;
       this.declaredType = declaredType;

@@ -93,6 +93,7 @@ public class SymbolTableBuilder extends BaseTreeVisitor {
   private String fullyQualifiedModuleName;
   private List<String> filePath;
   private final ProjectLevelSymbolTable projectLevelSymbolTable;
+  private final SymbolDeserializer symbolDeserializer = new SymbolDeserializer();
   private Map<Tree, Scope> scopesByRootTree;
   private FileInput fileInput = null;
   private Set<Tree> assignmentLeftHandSides = new HashSet<>();
@@ -355,7 +356,8 @@ public class SymbolTableBuilder extends BaseTreeVisitor {
         ? moduleTree.names().stream().map(Name::name).collect(Collectors.joining("."))
         : null;
       if (importFrom.isWildcardImport()) {
-        Set<Symbol> importedModuleSymbols = projectLevelSymbolTable.getSymbolsFromModule(moduleName);
+        Set<Symbol> importedModuleSymbols = symbolDeserializer.deserializeSymbols(
+          projectLevelSymbolTable.getSymbolsFromModule(moduleName), currentScope()::resolveSymbol);
         if (importedModuleSymbols == null && moduleName != null && !moduleName.equals(fullyQualifiedModuleName)) {
           importedModuleSymbols = TypeShed.symbolsForModule(moduleName);
         }
@@ -534,7 +536,7 @@ public class SymbolTableBuilder extends BaseTreeVisitor {
     }
 
     private void createScope(Tree tree, @Nullable Scope parent) {
-      scopesByRootTree.put(tree, new Scope(parent, tree, pythonFile, fullyQualifiedModuleName, projectLevelSymbolTable));
+      scopesByRootTree.put(tree, new Scope(parent, tree, pythonFile, fullyQualifiedModuleName, projectLevelSymbolTable, symbolDeserializer));
     }
 
     private void addBindingUsage(Name nameTree, Usage.Kind usage) {

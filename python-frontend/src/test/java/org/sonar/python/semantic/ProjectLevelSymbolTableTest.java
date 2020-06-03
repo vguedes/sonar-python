@@ -248,9 +248,11 @@ public class ProjectLevelSymbolTableTest {
   @Test
   public void not_class_symbol_in_super_class() {
     ClassSymbolImpl classASymbol = new ClassSymbolImpl("A", "mod1.A");
-    classASymbol.addSuperClass(new SymbolImpl("foo", "mod1.foo"));
+    SymbolImpl foo = new SymbolImpl("foo", "mod1.foo");
+    classASymbol.addSuperClass(foo);
+    Set<Symbol> mod1Symbols = new HashSet<>(Arrays.asList(foo, classASymbol));
     FileInput tree = parse(
-      new SymbolTableBuilder("my_package", pythonFile("my_module.py"), from(Collections.singletonMap("mod1", Collections.singleton(classASymbol)))),
+      new SymbolTableBuilder("my_package", pythonFile("my_module.py"), from(Collections.singletonMap("mod1", mod1Symbols))),
       "from mod1 import A"
     );
 
@@ -375,7 +377,8 @@ public class ProjectLevelSymbolTableTest {
   private static Set<Symbol> globalSymbols(FileInput fileInput, String packageName) {
     ProjectLevelSymbolTable projectLevelSymbolTable = new ProjectLevelSymbolTable();
     projectLevelSymbolTable.addModule(fileInput, packageName, pythonFile("mod.py"));
-    return projectLevelSymbolTable.getSymbolsFromModule(packageName.isEmpty() ? "mod" : packageName + ".mod");
+    Set<SerializableSymbol> symbolsFromModule = projectLevelSymbolTable.getSymbolsFromModule(packageName.isEmpty() ? "mod" : packageName + ".mod");
+    return new SymbolDeserializer().deserializeSymbols(symbolsFromModule, projectLevelSymbolTable::getSymbol);
   }
 
   @Test
@@ -445,7 +448,7 @@ public class ProjectLevelSymbolTableTest {
       "fn = 42"
     );
     globalSymbols = globalSymbols(tree, "mod");
-    assertThat(globalSymbols).extracting(Symbol::kind).containsExactly(Symbol.Kind.OTHER);
+    assertThat(globalSymbols).extracting(Symbol::kind).containsExactly(Symbol.Kind.AMBIGUOUS);
   }
 
   @Test
@@ -469,7 +472,7 @@ public class ProjectLevelSymbolTableTest {
     Set<Symbol> globalSymbols = globalSymbols(fileInput, "mod");
     assertThat(globalSymbols).extracting(Symbol::name).containsExactlyInAnyOrder("C");
     // TODO: Global statements should not alter the kind of a symbol
-    assertThat(globalSymbols).extracting(Symbol::kind).allSatisfy(k -> assertThat(Symbol.Kind.OTHER.equals(k)).isTrue());
+    assertThat(globalSymbols).extracting(Symbol::kind).allSatisfy(k -> assertThat(Symbol.Kind.CLASS.equals(k)).isTrue());
   }
 
   @Test
@@ -506,7 +509,7 @@ public class ProjectLevelSymbolTableTest {
     cSymbol = symbols.get("C");
     assertThat(cSymbol.name()).isEqualTo("C");
     assertThat(cSymbol.kind()).isEqualTo(Symbol.Kind.CLASS);
-    assertThat(((ClassSymbol) cSymbol).superClasses()).hasSize(1);
+    assertThat(((ClassSymbol) cSymbol).superClasses()).hasSize(0);
   }
 
   @Test

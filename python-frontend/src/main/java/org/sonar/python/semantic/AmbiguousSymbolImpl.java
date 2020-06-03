@@ -81,4 +81,12 @@ public class AmbiguousSymbolImpl extends SymbolImpl implements AmbiguousSymbol {
     super.removeUsages();
     symbols.forEach(symbol -> ((SymbolImpl) symbol).removeUsages());
   }
+
+  @Override
+  SerializableSymbol toSerializableSymbol() {
+    Set<SerializableSymbol> serializableSymbols = alternatives().stream()
+      .map(symbol -> ((SymbolImpl) symbol).toSerializableSymbol())
+      .collect(Collectors.toSet());
+    return new SerializableAmbiguousSymbol(name(), fullyQualifiedName(), serializableSymbols);
+  }
 }

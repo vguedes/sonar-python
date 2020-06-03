@@ -229,4 +229,17 @@ public class ClassSymbolImpl extends SymbolImpl implements ClassSymbol {
   boolean hasSuperClassWithoutSymbol() {
     return hasSuperClassWithoutSymbol;
   }
+
+  @Override
+  SerializableSymbol toSerializableSymbol() {
+    List<String> superClassFqns = superClasses.stream()
+      .map(Symbol::fullyQualifiedName)
+      .filter(Objects::nonNull)
+      .collect(Collectors.toList());
+    Set<String> memberFqns = members.stream()
+      .map(Symbol::fullyQualifiedName)
+      .filter(Objects::nonNull)
+      .collect(Collectors.toSet());
+    return new SerializableClassSymbol(name(), fullyQualifiedName(), superClassFqns, memberFqns);
+  }
 }

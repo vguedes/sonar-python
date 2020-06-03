@@ -36,7 +36,7 @@ import org.sonar.python.types.InferredTypes;
 
 public class SymbolImpl implements Symbol {
 
-  private final String name;
+  private String name;
   @Nullable
   String fullyQualifiedName;
   private final List<Usage> usages = new ArrayList<>();
@@ -131,5 +131,13 @@ public class SymbolImpl implements Symbol {
 
   Map<String, Symbol> getChildrenSymbolByName() {
     return Collections.unmodifiableMap(childrenSymbolByName);
+  }
+
+  SerializableSymbol toSerializableSymbol() {
+    return new SerializableSymbol(name, fullyQualifiedName);
+  }
+
+  void setName(String name) {
+    this.name = name;
   }
 }

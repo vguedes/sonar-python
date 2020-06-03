@@ -30,15 +30,14 @@ import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.sonar.plugins.python.api.PythonFile;
-import org.sonar.plugins.python.api.symbols.FunctionSymbol;
 import org.sonar.plugins.python.api.symbols.Symbol;
 import org.sonar.plugins.python.api.symbols.Usage;
 import org.sonar.plugins.python.api.tree.FileInput;
 
 public class ProjectLevelSymbolTable {
 
-  private final Map<String, Set<Symbol>> globalSymbolsByModuleName;
-  private Map<String, Symbol> globalSymbolsByFQN;
+  private final Map<String, Set<SerializableSymbol>> globalSymbolsByModuleName;
+  private Map<String, SerializableSymbol> globalSymbolsByFQN;
 
   public static ProjectLevelSymbolTable empty() {
     return new ProjectLevelSymbolTable(Collections.emptyMap());
@@ -53,50 +52,55 @@ public class ProjectLevelSymbolTable {
   }
 
   private ProjectLevelSymbolTable(Map<String, Set<Symbol>> globalSymbolsByModuleName) {
-    this.globalSymbolsByModuleName = new HashMap<>(globalSymbolsByModuleName);
+    this.globalSymbolsByModuleName = new HashMap<>();
+    globalSymbolsByModuleName.forEach((moduleName, exportedSymbols) -> {
+      Set<SerializableSymbol> serializableSymbols = exportedSymbols.stream()
+        .map(symbol -> ((SymbolImpl) symbol).toSerializableSymbol())
+        .collect(Collectors.toSet());
+      this.globalSymbolsByModuleName.put(moduleName, serializableSymbols);
+    });
   }
 
   public void addModule(FileInput fileInput, String packageName, PythonFile pythonFile) {
     SymbolTableBuilder symbolTableBuilder = new SymbolTableBuilder(packageName, pythonFile);
     String fullyQualifiedModuleName = SymbolUtils.fullyQualifiedModuleName(packageName, pythonFile.fileName());
     fileInput.accept(symbolTableBuilder);
-    Set<Symbol> globalSymbols = new HashSet<>();
-    for (Symbol globalVariable : fileInput.globalVariables()) {
-      String fullyQualifiedVariableName = globalVariable.fullyQualifiedName();
+    Set<SerializableSymbol> exportedSymbols = new HashSet<>();
+    for (Symbol exportedSymbol : fileInput.globalVariables()) {
+      String fullyQualifiedVariableName = exportedSymbol.fullyQualifiedName();
       if (((fullyQualifiedVariableName != null) && !fullyQualifiedVariableName.startsWith(fullyQualifiedModuleName)) ||
-        globalVariable.usages().stream().anyMatch(u -> u.kind().equals(Usage.Kind.IMPORT))) {
+        exportedSymbol.usages().stream().anyMatch(u -> u.kind().equals(Usage.Kind.IMPORT))) {
         // TODO: We don't put builtin or imported names in global symbol table to avoid duplicate FQNs in project level symbol table (to fix with SONARPY-647)
         continue;
       }
-      if (globalVariable.kind() == Symbol.Kind.CLASS) {
-        globalSymbols.add(((ClassSymbolImpl) globalVariable).copyWithoutUsages());
-      } else if (globalVariable.kind() == Symbol.Kind.FUNCTION) {
-        globalSymbols.add(new FunctionSymbolImpl(globalVariable.name(), ((FunctionSymbol) globalVariable)));
-      } else {
-        globalSymbols.add(new SymbolImpl(globalVariable.name(), fullyQualifiedModuleName + "." + globalVariable.name()));
-      }
+      exportedSymbols.add(((SymbolImpl) exportedSymbol).toSerializableSymbol());
     }
-    globalSymbolsByModuleName.put(fullyQualifiedModuleName, globalSymbols);
+    globalSymbolsByModuleName.put(fullyQualifiedModuleName, exportedSymbols);
   }
 
-  private Map<String, Symbol> globalSymbolsByFQN() {
+  private Map<String, SerializableSymbol> globalSymbolsByFQN() {
     if (globalSymbolsByFQN == null) {
       globalSymbolsByFQN = globalSymbolsByModuleName.values()
         .stream()
         .flatMap(Collection::stream)
         .filter(symbol -> symbol.fullyQualifiedName() != null)
-        .collect(Collectors.toMap(Symbol::fullyQualifiedName, Function.identity(), AmbiguousSymbolImpl::create));
+        .collect(Collectors.toMap(SerializableSymbol::fullyQualifiedName, Function.identity(), (a, b) -> {
+//          System.out.println("a -> name = " + a.name() + ", fqn = " + a.fullyQualifiedName());
+//          System.out.println("b -> name = " + b.name() + ", fqn = " + b.fullyQualifiedName());
+          return null;
+        }));
     }
     return globalSymbolsByFQN;
   }
 
   @CheckForNull
-  public Symbol getSymbol(@Nullable String fullyQualifiedName) {
+  public SerializableSymbol getSymbol(@Nullable String fullyQualifiedName) {
     return globalSymbolsByFQN().get(fullyQualifiedName);
   }
 
   @CheckForNull
-  public Set<Symbol> getSymbolsFromModule(@Nullable String moduleName) {
+  public Set<SerializableSymbol> getSymbolsFromModule(@Nullable String moduleName) {
     return globalSymbolsByModuleName.get(moduleName);
   }
+
 }
