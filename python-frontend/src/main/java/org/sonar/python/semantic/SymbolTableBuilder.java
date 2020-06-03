@@ -93,7 +93,7 @@ public class SymbolTableBuilder extends BaseTreeVisitor {
   private String fullyQualifiedModuleName;
   private List<String> filePath;
   private final ProjectLevelSymbolTable projectLevelSymbolTable;
-  private final SymbolDeserializer symbolDeserializer = new SymbolDeserializer();
+  private final SymbolDeserializer symbolDeserializer;
   private Map<Tree, Scope> scopesByRootTree;
   private FileInput fileInput = null;
   private Set<Tree> assignmentLeftHandSides = new HashSet<>();
@@ -104,6 +104,7 @@ public class SymbolTableBuilder extends BaseTreeVisitor {
     fullyQualifiedModuleName = null;
     filePath = null;
     projectLevelSymbolTable = ProjectLevelSymbolTable.empty();
+    symbolDeserializer = new SymbolDeserializer(projectLevelSymbolTable);
     this.pythonFile = pythonFile;
   }
 
@@ -120,6 +121,7 @@ public class SymbolTableBuilder extends BaseTreeVisitor {
       filePath.add("");
     }
     this.projectLevelSymbolTable = projectLevelSymbolTable;
+    symbolDeserializer = new SymbolDeserializer(projectLevelSymbolTable);
   }
 
   @Override
@@ -357,7 +359,7 @@ public class SymbolTableBuilder extends BaseTreeVisitor {
         : null;
       if (importFrom.isWildcardImport()) {
         Set<Symbol> importedModuleSymbols = symbolDeserializer.deserializeSymbols(
-          projectLevelSymbolTable.getSymbolsFromModule(moduleName), currentScope()::resolveSymbol);
+          projectLevelSymbolTable.getSymbolsFromModule(moduleName));
         if (importedModuleSymbols == null && moduleName != null && !moduleName.equals(fullyQualifiedModuleName)) {
           importedModuleSymbols = TypeShed.symbolsForModule(moduleName);
         }

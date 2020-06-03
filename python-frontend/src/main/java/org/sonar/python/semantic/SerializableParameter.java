@@ -31,6 +31,7 @@ public class SerializableParameter {
   private final boolean hasDefaultValue;
   private final boolean isKeywordOnly;
   private final boolean isPositionalOnly;
+  private final boolean isVariadic;
   @Nullable
   private final LocationInFile location;
 
@@ -41,6 +42,7 @@ public class SerializableParameter {
     hasDefaultValue = parameter.hasDefaultValue();
     isKeywordOnly = parameter.isKeywordOnly();
     isPositionalOnly = parameter.isPositionalOnly();
+    isVariadic = parameter.isVariadic();
     location = parameter.location();
   }
 
@@ -59,6 +61,10 @@ public class SerializableParameter {
 
   public boolean isPositionalOnly() {
     return isPositionalOnly;
+  }
+
+  public boolean isVariadic() {
+    return isVariadic;
   }
 
   @CheckForNull

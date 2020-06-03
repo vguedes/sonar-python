@@ -240,6 +240,6 @@ public class ClassSymbolImpl extends SymbolImpl implements ClassSymbol {
       .map(Symbol::fullyQualifiedName)
       .filter(Objects::nonNull)
       .collect(Collectors.toSet());
-    return new SerializableClassSymbol(name(), fullyQualifiedName(), superClassFqns, memberFqns);
+    return new SerializableClassSymbol(name(), fullyQualifiedName(), superClassFqns, memberFqns, hasSuperClassWithoutSymbol);
   }
 }

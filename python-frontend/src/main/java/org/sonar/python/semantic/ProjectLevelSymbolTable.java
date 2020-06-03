@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.sonar.plugins.python.api.PythonFile;
+import org.sonar.plugins.python.api.symbols.ClassSymbol;
 import org.sonar.plugins.python.api.symbols.Symbol;
 import org.sonar.plugins.python.api.symbols.Usage;
 import org.sonar.plugins.python.api.tree.FileInput;
@@ -74,6 +75,10 @@ public class ProjectLevelSymbolTable {
         continue;
       }
       exportedSymbols.add(((SymbolImpl) exportedSymbol).toSerializableSymbol());
+      if (exportedSymbol.is(Symbol.Kind.CLASS)) {
+        ((ClassSymbol) exportedSymbol).declaredMembers()
+          .forEach(member -> exportedSymbols.add(((SymbolImpl) member).toSerializableSymbol()));
+      }
     }
     globalSymbolsByModuleName.put(fullyQualifiedModuleName, exportedSymbols);
   }

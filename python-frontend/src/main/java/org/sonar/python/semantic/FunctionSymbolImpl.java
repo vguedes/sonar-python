@@ -102,6 +102,28 @@ public class FunctionSymbolImpl extends SymbolImpl implements FunctionSymbol {
     this.isStub = true;
   }
 
+  FunctionSymbolImpl(SerializableFunctionSymbol serializableFunctionSymbol) {
+    super(serializableFunctionSymbol.name(), serializableFunctionSymbol.fullyQualifiedName());
+    setKind(Kind.FUNCTION);
+    this.hasVariadicParameter = serializableFunctionSymbol.parameters().stream().anyMatch(SerializableParameter::isVariadic);
+    this.isInstanceMethod = serializableFunctionSymbol.isInstanceMethod();
+    this.hasDecorators = !serializableFunctionSymbol.decorators().isEmpty();
+    this.decorators = serializableFunctionSymbol.decorators();
+    this.functionDefinitionLocation = null;
+    this.isStub = false;
+    this.parameters.addAll(fromSerializableParameter(serializableFunctionSymbol));
+  }
+
+  private static List<ParameterImpl> fromSerializableParameter(SerializableFunctionSymbol serializableFunctionSymbol) {
+    return serializableFunctionSymbol.parameters().stream().map(parameter -> {
+      ParameterState parameterState = new ParameterState();
+      parameterState.keywordOnly = parameter.isKeywordOnly();
+      parameterState.positionalOnly = parameter.isPositionalOnly();
+      return new ParameterImpl(
+        parameter.name(), InferredTypes.anyType(), parameter.hasDefaultValue(), parameter.isVariadic(), parameterState, parameter.location());
+    }).collect(Collectors.toList());
+  }
+
   @Override
   FunctionSymbolImpl copyWithoutUsages() {
     FunctionSymbolImpl copy = new FunctionSymbolImpl(name(), this);
@@ -236,7 +258,7 @@ public class FunctionSymbolImpl extends SymbolImpl implements FunctionSymbol {
     return new SerializableFunctionSymbol(name(), fullyQualifiedName(), serializableParameters, isStub, isInstanceMethod, decorators, functionDefinitionLocation);
   }
 
-  public static class ParameterImpl implements Parameter {
+  private static class ParameterImpl implements Parameter {
 
     private final String name;
     private final InferredType declaredType;
@@ -246,7 +268,7 @@ public class FunctionSymbolImpl extends SymbolImpl implements FunctionSymbol {
     private final boolean isPositionalOnly;
     private final LocationInFile location;
 
-    public ParameterImpl(@Nullable String name, InferredType declaredType, boolean hasDefaultValue,
+    private ParameterImpl(@Nullable String name, InferredType declaredType, boolean hasDefaultValue,
                   boolean isVariadic, ParameterState parameterState, @Nullable LocationInFile location) {
       this.name = name;
       this.declaredType = declaredType;

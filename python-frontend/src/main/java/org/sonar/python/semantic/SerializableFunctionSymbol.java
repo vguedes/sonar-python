@@ -20,13 +20,10 @@
 package org.sonar.python.semantic;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.sonar.plugins.python.api.LocationInFile;
 import org.sonar.plugins.python.api.symbols.Symbol;
-import org.sonar.python.semantic.FunctionSymbolImpl.ParameterState;
-import org.sonar.python.types.InferredTypes;
 
 public class SerializableFunctionSymbol extends SerializableSymbol {
   private final List<SerializableParameter> parameters;
@@ -69,14 +66,6 @@ public class SerializableFunctionSymbol extends SerializableSymbol {
 
   @Override
   public Symbol toSymbol() {
-    boolean hasDecorators = !decorators.isEmpty();
-    List<FunctionSymbolImpl.Parameter> params = this.parameters.stream().map(parameter -> {
-      ParameterState parameterState = new ParameterState();
-      parameterState.keywordOnly = parameter.isKeywordOnly();
-      parameterState.positionalOnly = parameter.isPositionalOnly();
-      return new FunctionSymbolImpl.ParameterImpl(
-        parameter.name(), InferredTypes.anyType(), parameter.hasDefaultValue(), false, parameterState, parameter.location());
-    }).collect(Collectors.toList());
-    return new FunctionSymbolImpl(name(), fullyQualifiedName(), false, isInstanceMethod, hasDecorators, params, decorators);
+    return new FunctionSymbolImpl(this);
   }
 }

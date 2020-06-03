@@ -166,7 +166,7 @@ class Scope {
   void addModuleSymbol(Name nameTree, @CheckForNull String fullyQualifiedName) {
     String symbolName = nameTree.name();
     Set<Symbol> moduleExportedSymbols = symbolDeserializer.deserializeSymbols(
-      projectLevelSymbolTable.getSymbolsFromModule(fullyQualifiedName), this::resolveSymbol);
+      projectLevelSymbolTable.getSymbolsFromModule(fullyQualifiedName));
     if (moduleExportedSymbols != null && !isExistingSymbol(symbolName)) {
       SymbolImpl moduleSymbol = new SymbolImpl(symbolName, fullyQualifiedName);
       moduleExportedSymbols.forEach(moduleSymbol::addChildSymbol);
@@ -187,7 +187,7 @@ class Scope {
   void addImportedSymbol(Name nameTree, @CheckForNull String fullyQualifiedName, String fromModuleName) {
     String symbolName = nameTree.name();
     Symbol importedSymbol = symbolDeserializer.deserializeSymbol(
-      projectLevelSymbolTable.getSymbol(fullyQualifiedName), this::resolveSymbol);
+      projectLevelSymbolTable.getSymbol(fullyQualifiedName));
     if (importedSymbol != null && !isExistingSymbol(symbolName)) {
       ((SymbolImpl) importedSymbol).setName(symbolName);
       this.symbols.add(importedSymbol);
@@ -275,15 +275,5 @@ class Scope {
     symbols.add(ambiguousSymbol);
     symbolsByName.remove(symbol.name());
     symbolsByName.put(symbol.name(), ambiguousSymbol);
-  }
-
-  Symbol resolveSymbol(String fullyQualifiedName) {
-    Symbol symbol = symbolDeserializer.deserializeSymbol(projectLevelSymbolTable.getSymbol(fullyQualifiedName), this::resolveSymbol);
-    if (symbol == null) {
-      symbol = builtinSymbols.stream()
-        .filter(builtinSymbol -> fullyQualifiedName.equals(builtinSymbol.fullyQualifiedName()))
-        .findFirst().orElse(null);
-    }
-    return symbol;
   }
 }
