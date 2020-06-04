@@ -26,11 +26,11 @@ import org.sonar.plugins.python.api.symbols.Symbol;
 
 public class SerializableClassSymbol extends SerializableSymbol {
   private final List<String> superClasses;
-  private final Set<String> declaredMembers;
+  private final Set<SerializableSymbol> declaredMembers;
   private final boolean hasSuperClassWithoutSymbol;
 
   public SerializableClassSymbol(String name, @Nullable String fullyQualifiedName,
-                                 List<String> superClasses, Set<String> declaredMembers, boolean hasSuperClassWithoutSymbol) {
+                                 List<String> superClasses, Set<SerializableSymbol> declaredMembers, boolean hasSuperClassWithoutSymbol) {
     super(name, fullyQualifiedName);
     this.superClasses = superClasses;
     this.declaredMembers = declaredMembers;
@@ -41,7 +41,7 @@ public class SerializableClassSymbol extends SerializableSymbol {
     return superClasses;
   }
 
-  public Set<String> declaredMembers() {
+  public Set<SerializableSymbol> declaredMembers() {
     return declaredMembers;
   }
 

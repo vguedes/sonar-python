@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
+import org.sonar.plugins.python.api.symbols.ClassSymbol;
 import org.sonar.plugins.python.api.symbols.Symbol;
 import org.sonar.python.types.TypeShed;
 
@@ -47,26 +48,46 @@ public class SymbolDeserializer {
     if (deserializedSymbol != null) {
       return deserializedSymbol;
     }
-    deserializedSymbol = serializableSymbol.toSymbol();
+    deserializedSymbol = deserialize(serializableSymbol);
     deserializedSymbolsByFqn.put(deserializedSymbol.fullyQualifiedName(), deserializedSymbol);
-    if (deserializedSymbol.is(Symbol.Kind.CLASS)) {
-      ClassSymbolImpl classSymbol = (ClassSymbolImpl) deserializedSymbol;
-      ((SerializableClassSymbol) serializableSymbol).superClasses().stream()
-        .map(this::resolveSymbolFromFqn)
-        .forEach(superClass -> {
-          if (superClass != null) {
-            classSymbol.addSuperClass(superClass);
-          } else {
-            classSymbol.setHasSuperClassWithoutSymbol();
-          }
-        });
-      Set<Symbol> members = ((SerializableClassSymbol) serializableSymbol).declaredMembers().stream()
-        .map(fqn -> deserializeSymbol(projectLevelSymbolTable.getSymbol(fqn)))
-        .filter(Objects::nonNull)
-        .collect(Collectors.toSet());
-      classSymbol.addMembers(members);
+    return deserializedSymbol;
+  }
+
+  Symbol deserialize(SerializableSymbol serializableSymbol) {
+    Symbol deserializedSymbol;
+    if (serializableSymbol instanceof SerializableClassSymbol) {
+      deserializedSymbol = deserializeClass((SerializableClassSymbol) serializableSymbol);
+    } else if (serializableSymbol instanceof SerializableAmbiguousSymbol) {
+      Set<Symbol> alternatives = ((SerializableAmbiguousSymbol) serializableSymbol).alternatives().stream()
+        .map(this::deserialize).collect(Collectors.toSet());
+      if (alternatives.size() == 1) {
+        deserializedSymbol = alternatives.iterator().next();
+      } else {
+        deserializedSymbol = AmbiguousSymbolImpl.create(alternatives);
+      }
+    } else {
+      deserializedSymbol = serializableSymbol.toSymbol();
     }
     return deserializedSymbol;
+  }
+
+  private ClassSymbol deserializeClass(SerializableClassSymbol serializableSymbol) {
+    ClassSymbolImpl classSymbol = (ClassSymbolImpl) serializableSymbol.toSymbol();
+    serializableSymbol.superClasses().stream()
+      .map(this::resolveSymbolFromFqn)
+      .forEach(superClass -> {
+        if (superClass != null) {
+          classSymbol.addSuperClass(superClass);
+        } else {
+          classSymbol.setHasSuperClassWithoutSymbol();
+        }
+      });
+    Set<Symbol> members = serializableSymbol.declaredMembers().stream()
+      .map(this::deserializeSymbol)
+      .filter(Objects::nonNull)
+      .collect(Collectors.toSet());
+    classSymbol.addMembers(members);
+    return classSymbol;
   }
 
   @CheckForNull

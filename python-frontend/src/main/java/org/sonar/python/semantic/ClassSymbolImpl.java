@@ -231,15 +231,16 @@ public class ClassSymbolImpl extends SymbolImpl implements ClassSymbol {
   }
 
   @Override
-  SerializableSymbol toSerializableSymbol() {
+  Set<SerializableSymbol> serialize() {
     List<String> superClassFqns = superClasses.stream()
       .map(Symbol::fullyQualifiedName)
       .filter(Objects::nonNull)
       .collect(Collectors.toList());
-    Set<String> memberFqns = members.stream()
-      .map(Symbol::fullyQualifiedName)
-      .filter(Objects::nonNull)
+    Set<SerializableSymbol> result = new HashSet<>();
+    Set<SerializableSymbol> serializedMembers = members.stream()
+      .flatMap(member -> ((SymbolImpl) member).serialize().stream())
       .collect(Collectors.toSet());
-    return new SerializableClassSymbol(name(), fullyQualifiedName(), superClassFqns, memberFqns, hasSuperClassWithoutSymbol);
+    result.add(new SerializableClassSymbol(name(), fullyQualifiedName(), superClassFqns, serializedMembers, hasSuperClassWithoutSymbol));
+    return result;
   }
 }

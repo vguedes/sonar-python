@@ -418,8 +418,7 @@ public class ProjectLevelSymbolTableTest {
       "  def meth(): pass"
     );
     Set<Symbol> exportedSymbols = projectLevelSymbols(tree, "package");
-    assertThat(exportedSymbols).extracting(Symbol::fullyQualifiedName).containsExactlyInAnyOrder(
-      "package.mod.fn", "package.mod.A", "package.mod.A.meth");
+    assertThat(exportedSymbols).extracting(Symbol::fullyQualifiedName).containsExactlyInAnyOrder("package.mod.fn", "package.mod.A");
     assertThat(exportedSymbols).extracting(Symbol::usages).allSatisfy(usages -> assertThat(usages).isEmpty());
   }
 

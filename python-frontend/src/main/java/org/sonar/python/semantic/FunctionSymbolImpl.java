@@ -21,8 +21,10 @@ package org.sonar.python.semantic;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -251,11 +253,12 @@ public class FunctionSymbolImpl extends SymbolImpl implements FunctionSymbol {
   }
 
   @Override
-  SerializableSymbol toSerializableSymbol() {
+  Set<SerializableSymbol> serialize() {
     List<SerializableParameter> serializableParameters = parameters.stream()
       .map(SerializableParameter::new)
       .collect(Collectors.toList());
-    return new SerializableFunctionSymbol(name(), fullyQualifiedName(), serializableParameters, isStub, isInstanceMethod, decorators, functionDefinitionLocation);
+    return Collections.singleton(
+      new SerializableFunctionSymbol(name(), fullyQualifiedName(), serializableParameters, isStub, isInstanceMethod, decorators, functionDefinitionLocation));
   }
 
   private static class ParameterImpl implements Parameter {

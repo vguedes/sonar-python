@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.sonar.plugins.python.api.symbols.Symbol;
@@ -133,8 +134,8 @@ public class SymbolImpl implements Symbol {
     return Collections.unmodifiableMap(childrenSymbolByName);
   }
 
-  SerializableSymbol toSerializableSymbol() {
-    return new SerializableSymbol(name, fullyQualifiedName);
+  Set<SerializableSymbol> serialize() {
+    return Collections.singleton(new SerializableSymbol(name, fullyQualifiedName));
   }
 
   void setName(String name) {
