@@ -84,9 +84,8 @@ public class AmbiguousSymbolImpl extends SymbolImpl implements AmbiguousSymbol {
 
   @Override
   Set<SerializableSymbol> serialize() {
-    Set<SerializableSymbol> serializableSymbols = alternatives().stream()
+    return alternatives().stream()
       .flatMap(symbol -> ((SymbolImpl) symbol).serialize().stream())
       .collect(Collectors.toSet());
-    return Collections.singleton(new SerializableAmbiguousSymbol(name(), fullyQualifiedName(), serializableSymbols));
   }
 }
