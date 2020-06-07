@@ -232,13 +232,18 @@ public class ClassSymbolImpl extends SymbolImpl implements ClassSymbol {
 
   @Override
   Set<SerializableSymbol> serialize() {
-    List<String> superClassFqns = superClasses.stream()
-      .map(Symbol::fullyQualifiedName)
-      .filter(Objects::nonNull)
-      .collect(Collectors.toList());
+    boolean hasSuperClassWithoutFqn = hasSuperClassWithoutSymbol;
+    List<String> superClassFqns = new ArrayList<>();
+    for (Symbol superClass : superClasses) {
+      if (superClass.fullyQualifiedName() == null) {
+        hasSuperClassWithoutFqn = true;
+      } else {
+        superClassFqns.add(superClass.fullyQualifiedName());
+      }
+    }
     Set<SerializableSymbol> serializedMembers = members.stream()
       .flatMap(member -> ((SymbolImpl) member).serialize().stream())
       .collect(Collectors.toSet());
-    return Collections.singleton(new SerializableClassSymbol(name(), fullyQualifiedName(), superClassFqns, serializedMembers, hasSuperClassWithoutSymbol));
+    return Collections.singleton(new SerializableClassSymbol(name(), fullyQualifiedName(), superClassFqns, serializedMembers, hasSuperClassWithoutFqn));
   }
 }

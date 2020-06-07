@@ -25,8 +25,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.sonar.plugins.python.api.PythonFile;
@@ -34,10 +32,13 @@ import org.sonar.plugins.python.api.symbols.Symbol;
 import org.sonar.plugins.python.api.symbols.Usage;
 import org.sonar.plugins.python.api.tree.FileInput;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toSet;
+
 public class ProjectLevelSymbolTable {
 
   private final Map<String, Set<SerializableSymbol>> globalSymbolsByModuleName;
-  private Map<String, SerializableSymbol> globalSymbolsByFQN;
+  private Map<String, Set<SerializableSymbol>> globalSymbolsByFQN;
 
   public static ProjectLevelSymbolTable empty() {
     return new ProjectLevelSymbolTable(Collections.emptyMap());
@@ -56,7 +57,7 @@ public class ProjectLevelSymbolTable {
     globalSymbolsByModuleName.forEach((moduleName, exportedSymbols) -> {
       Set<SerializableSymbol> serializableSymbols = exportedSymbols.stream()
         .flatMap(symbol -> ((SymbolImpl) symbol).serialize().stream())
-        .collect(Collectors.toSet());
+        .collect(toSet());
       this.globalSymbolsByModuleName.put(moduleName, serializableSymbols);
     });
   }
@@ -78,23 +79,19 @@ public class ProjectLevelSymbolTable {
     globalSymbolsByModuleName.put(fullyQualifiedModuleName, exportedSymbols);
   }
 
-  private Map<String, SerializableSymbol> globalSymbolsByFQN() {
+  private Map<String, Set<SerializableSymbol>> globalSymbolsByFQN() {
     if (globalSymbolsByFQN == null) {
       globalSymbolsByFQN = globalSymbolsByModuleName.values()
         .stream()
         .flatMap(Collection::stream)
         .filter(symbol -> symbol.fullyQualifiedName() != null)
-        .collect(Collectors.toMap(SerializableSymbol::fullyQualifiedName, Function.identity(), (a, b) -> {
-//          System.out.println("a -> name = " + a.name() + ", fqn = " + a.fullyQualifiedName());
-//          System.out.println("b -> name = " + b.name() + ", fqn = " + b.fullyQualifiedName());
-          return null;
-        }));
+        .collect(groupingBy(SerializableSymbol::fullyQualifiedName, toSet()));
     }
     return globalSymbolsByFQN;
   }
 
   @CheckForNull
-  public SerializableSymbol getSymbol(@Nullable String fullyQualifiedName) {
+  public Set<SerializableSymbol> getSymbol(@Nullable String fullyQualifiedName) {
     return globalSymbolsByFQN().get(fullyQualifiedName);
   }
 
