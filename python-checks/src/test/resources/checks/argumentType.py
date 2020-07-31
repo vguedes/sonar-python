@@ -22,7 +22,7 @@ class UnexpectedClass(): a = 42
 
 def functions_defined_locally():
   def function_with_int(a: int): ...
-  function_with_int("154") # Noncompliant
+  function_with_int("154") # FN
   function_with_int(154)  # OK
 
   def function_with_custom_type_arg(smth: ExpectedClass, a: int): ...
@@ -156,7 +156,7 @@ def edge_cases():
     @decorator2
     def method_with_multiple_decorators(y: str): ...
   A = SomeClass()
-  A.my_method("42") # Noncompliant
+  A.my_method("42") # FN
   A.my_method(42)
   SomeClass.ambiguous_static_method("some string")
   SomeClass.ambiguous_static_method(42) # Noncompliant

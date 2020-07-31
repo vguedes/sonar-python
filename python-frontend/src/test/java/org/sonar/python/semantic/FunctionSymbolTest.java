@@ -95,7 +95,7 @@ public class FunctionSymbolTest {
     assertThat(functionSymbol.parameters().get(0).isVariadic()).isFalse();
 
     functionSymbol = functionSymbol("def fn(p1: int): pass");
-    assertThat(functionSymbol.parameters().get(0).declaredType().canOnlyBe("int")).isTrue();
+    assertThat(functionSymbol.parameters().get(0).declaredType().canBeOrExtend("int")).isTrue();
 
     functionSymbol = functionSymbol("def fn(**kwargs): pass");
     assertThat(functionSymbol.parameters()).hasSize(1);
